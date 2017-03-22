@@ -1,0 +1,7 @@
+## Title: DPRes
+## Notes: De Profundis Reserves
+## Version: 0.0.1
+## Author: |cff02bf02Luise|r
+## Interface: 11200
+## SavedVariables: DPResOptions
+DPRes.xml
