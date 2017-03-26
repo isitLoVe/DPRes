@@ -35,7 +35,12 @@ function DPRes_EventFrame_OnLoad()
 	
 	--patterns
 	DPRes_pattern_add = "^!dpres add ([^%s]+) ([^%s]+)"
-
+	DPRes_pattern_remove = "^!dpres remove$"
+	
+	DPRes_pattern_manual_add = "^add ([^%s]+) ([^%s]+) ([^%s]+)"
+	DPRes_pattern_manual_remove = "^remove ([^%s]+)"
+	
+	
 end
 
 function DPRes_EventFrame_OnEvent()
@@ -60,10 +65,17 @@ function DPRes_EventFrame_OnEvent()
 			DPRes_Debug("!dpres add received by " .. arg2)
 			--!dpres add spec altname
 			local _, _, spec, altname = string.find(arg1, DPRes_pattern_add)
+			
 			if spec and altname then
 				DPRes_Debug("!dpres add " .. spec .. " " .. altname)
-				DPRes_addtodb(arg2,spec,altname)
+				DPRes_AddDB(arg2,spec,altname)
+			elseif spec then
+				DPRes_Debug("!dpres add " .. spec)
+				DPRes_AddDB(arg2,spec)
 			end
+		elseif string.find(arg1, "^!dpres remove") then
+			DPRes_Debug("!dpres remove received by " .. arg2)
+			DPRes_RemDB(arg2)
 		end
 	end
 end
@@ -74,14 +86,11 @@ function DPRes_Debug(msg)
 	end
 end
 
-function DPRes_addtodb(name, spec, altname)
+function DPRes_AddDB(name, spec, altname)
 	if name and spec and altname then
 		local t = date("%H:%M")
-		
 		if not DPRes_hasName(name) then
-		
 			DPRes_Debug("addtodb " .. name .. " " .. spec .. " " .. altname .. " " .. t)
-			
 			if getn(DPResDB) == 0 then
 				DPResDB[1] = {}
 				DPResDB[1].name = name
@@ -96,12 +105,66 @@ function DPRes_addtodb(name, spec, altname)
 				DPResDB[id].altname = altname
 				DPResDB[id].timestamp = t
 			end
-			
 			SendChatMessage("DPRes: You have been added to the reserves at " .. t, "WHISPER", nil, name)
-		
 		else
-			SendChatMessage("DPRes: You are already in the reserves database, "WHISPER", nil, name)
+			SendChatMessage("DPRes: You are already in the reserves database", "WHISPER", nil, name)
 			DPRes_Debug("addtodb " .. name .. " already in the resdb")
+		end
+	elseif name and spec then
+		local t = date("%H:%M")
+		if not DPRes_hasName(name) then
+			DPRes_Debug("addtodb " .. name .. " " .. spec .. " " .. t)
+			if getn(DPResDB) == 0 then
+				DPResDB[1] = {}
+				DPResDB[1].name = name
+				DPResDB[1].spec = spec
+				DPResDB[1].altname = ""
+				DPResDB[1].timestamp = t
+			else
+				id = getn(DPResDB)+1 
+				DPResDB[id] = {}
+				DPResDB[id].name = name
+				DPResDB[id].spec = spec
+				DPResDB[id].altname = ""
+				DPResDB[id].timestamp = t
+			end
+			SendChatMessage("DPRes: You have been added to the reserves at " .. t, "WHISPER", nil, name)
+		else
+			SendChatMessage("DPRes: You are already in the reserves database", "WHISPER", nil, name)
+			DPRes_Debug("addtodb " .. name .. " already in the resdb")
+		end
+	elseif name then
+		local t = date("%H:%M")
+		if not DPRes_hasName(name) then
+			DPRes_Debug("addtodb " .. name .. " " .. t)
+			if getn(DPResDB) == 0 then
+				DPResDB[1] = {}
+				DPResDB[1].name = name
+				DPResDB[1].spec = ""
+				DPResDB[1].altname = ""
+				DPResDB[1].timestamp = t
+			else
+				id = getn(DPResDB)+1 
+				DPResDB[id] = {}
+				DPResDB[id].name = name
+				DPResDB[id].spec = ""
+				DPResDB[id].altname = ""
+				DPResDB[id].timestamp = t
+			end
+			SendChatMessage("DPRes: You have been added to the reserves at " .. t, "WHISPER", nil, name)
+		else
+			SendChatMessage("DPRes: You are already in the reserves database", "WHISPER", nil, name)
+			DPRes_Debug("addtodb " .. name .. " already in the resdb")
+		end
+	end
+end
+
+function DPRes_RemDB(name)
+	local n = getn(DPResDB)
+	for i=1,n do
+		if DPResDB[i].name == name then
+			table.remove(DPResDB[i], name)
+			DPRes_Debug("remove from db " .. name)
 		end
 	end
 end
@@ -136,8 +199,10 @@ end
 function DPRes_SlashCommand( msg )
 	if msg == "help" then
 		DEFAULT_CHAT_FRAME:AddMessage("DPRes usage:")
-		DEFAULT_CHAT_FRAME:AddMessage("/DPRes { help | list | clear }")
+		DEFAULT_CHAT_FRAME:AddMessage("/DPRes { help | add | remove | list | clear | debug }")
 		DEFAULT_CHAT_FRAME:AddMessage(" - |cff9482c9help|r: prints out this help")
+		DEFAULT_CHAT_FRAME:AddMessage(" - |cff9482c9add|r: adds a player to reserves (/dpres add name specc altname)")
+		DEFAULT_CHAT_FRAME:AddMessage(" - |cff9482c9remove|r: removes a player from the reserves (/dpres remove name)")
 		DEFAULT_CHAT_FRAME:AddMessage(" - |cff9482c9list|r: lists the reserves")
 		DEFAULT_CHAT_FRAME:AddMessage(" - |cff9482c9debug|r: toggles debug messages")
 	elseif msg == "debug" then
@@ -153,6 +218,14 @@ function DPRes_SlashCommand( msg )
 	elseif msg == "clear" then
 		DPRes_Debug("DB clear")
 		DPResDB = {}
+	elseif string.find(msg, "add") then
+		DPRes_Debug("manual add")
+		local _, _, name, spec, altname = string.find(arg1, DPRes_pattern_manual_add)
+		DPRes_AddDB(name,spec,altname)
+	elseif string.find(msg, "remove") then
+		DPRes_Debug("manual remove")
+		local _, _, name = string.find(arg1, DPRes_pattern_manual_remove)
+		DPRes_RemDB(name)
 	end
 end
 
