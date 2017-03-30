@@ -1,0 +1,13 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/">
+<script file="DPRes.lua"/>
+	<Frame name="DPRes_EventFrame" parent="UIParent" hidden="true">
+		<Scripts>
+			<OnLoad>
+				DPRes_EventFrame_OnLoad();
+			</OnLoad>
+			<OnEvent>
+				DPRes_EventFrame_OnEvent();
+			</OnEvent>
+		</Scripts>
+	</Frame>
+</Ui>
